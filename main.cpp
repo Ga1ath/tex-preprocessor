@@ -6,6 +6,9 @@
 #include "Lexer.h"
 #include "Node.h"
 #include "Value.h"
+#include <ctime>
+#include <chrono>
+#include <iomanip>
 
 ProgramString Position::ps;
 name_table Node::global;
@@ -14,12 +17,16 @@ replacement_map Node::reps;
 std::string make_replacement(std::string prog, replacement_map m) {
 	std::string res = "";
 	size_t index = 0;
+
+//	std::cout << "make_replacement.size = " << m.size() << std::endl;
+
 	for (auto it = m.begin(); it != m.end(); ++it) {
 		res += prog.substr(index, (*it).second.begin - index);
 		if ((*it).second.tag == GRAPHIC) {
 			res += "{" + to_plot((*it).second.replacement) + "}";
 		}
 		else {
+//		    std::cout << "second.replacement = " << to_string((*it).second.replacement) << std::endl;
 			res += "{" + to_string((*it).second.replacement) + "}";
 		}
 		index = (*it).second.end;
@@ -29,7 +36,7 @@ std::string make_replacement(std::string prog, replacement_map m) {
 }
 
 int main(int argc, char *argv[]) {
-	Parser B;
+    Parser B;
 
 	bool ok = true;
 	bool replace = false;   //файл не будет перезаписан по-умолчанию
@@ -55,6 +62,10 @@ int main(int argc, char *argv[]) {
 		}
 		else { file_out = argv[2]; }
 	}
+
+//	std::cout << file_in;
+//	std::cout << file_out;
+
 	FileHandler &fh = FileHandler::Instance(file_in, file_out);
 	if (!fh.good()) {
 		std::cerr << file_in << ":" << "Failed to initialize" << std::endl;
@@ -70,26 +81,36 @@ int main(int argc, char *argv[]) {
 			std::vector<Token> p = l.program_to_tokens(Position::ps);
 			for (size_t i = 0; i < p.size(); ++i) printf("%s\n", to_string(p[i]).c_str());
 			B.init(p);
+//            std::cout << "after B.init(p);\n";
 			res = new Node();
+//            std::cout << "after res = new Node();\n";
 			res->fields = B.block(NONE);
+//            std::cout << "after B.block(NONE);\n";
 			res->set_tag(ROOT);
 			res->print("");
+//            std::cout << "after res->print(\"\");\n";
 			res->exec();
+//			std::cout << "after exec()\n";
 
 			//std::string replacement = Position::ps.program;
 			std::string replacement = make_replacement(Position::ps.program, Node::reps);
+//			std::cout << "after replacement\n";
 			fh.print_to_out(replacement);
+//			std::cout << "fh.print_to_out\n";
 			Node::reps.clear();
 		}
 		catch (Error err) {
+		    std::cout << "catch (Error err)\n";
 			std::cerr << file_in << ":" << err.what() << std::endl;
 			ok = false;
 		}
 		catch (Value::BadType err) {
+            std::cout << "catch (Value::BadType err\n)";
 			std::cerr << file_in << ":" << err.what() << std::endl;
 			ok = false;
 		}
 		catch (std::exception err) {
+            std::cout << "catch (std::exception err)\n";
 			std::cerr << file_in << ":" << err.what() << std::endl;
 			ok = false;
 		}
@@ -110,5 +131,5 @@ int main(int argc, char *argv[]) {
 #ifdef _MSC_VER
 	getchar();
 #endif
-	return 0;
+    return 0;
 }
