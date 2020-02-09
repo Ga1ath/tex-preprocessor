@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Coordinate.h"
+
 class Value;
 
 class Node;
@@ -128,7 +130,9 @@ public:
 
 Node *Parser::expression(int pr = 0) {  //выражение
 	Token *ptr = get();
-	Node *lhs = Parser::unexpr(ptr);
+
+    Node *lhs = Parser::unexpr(ptr);
+
 	while (pr < t_info[cur()->_tag].priority) {
 		ptr = get();
 		lhs = Parser::binexpr(ptr, lhs);
@@ -241,6 +245,7 @@ std::vector<Node *> Parser::list(Tag close) {  //список аргументо
 Node *Parser::binexpr(Token *rhs, Node *lhs) {
 	rhs->binary();
 	Node *res = new Node(rhs);
+
 	Tag close_tag = t_info[res->_tag].close_tag;
 
 	res->left = lhs;
@@ -259,6 +264,7 @@ Node *Parser::binexpr(Token *rhs, Node *lhs) {
 }
 
 Node *Parser::unexpr(Token *t) {
+
 	t->unary();
 	//if (t->_tag == NOT) std::cout << "AAAAAAAAAAAAAAAAAAAAAA\n";
 	Node *res = new Node(t);
@@ -338,7 +344,7 @@ Node *Parser::unexpr(Token *t) {
 			res->left = expression(0);
 		}
 	}
-	else if (res->_tag == WHILE) {
+	else if (res->_tag == WHILE || res->_tag == PRODUCT) {
 		res->cond = expression(0);
 		if (cur()->_tag == BREAK) {
 			get();
