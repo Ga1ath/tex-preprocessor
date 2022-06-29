@@ -1,45 +1,33 @@
 #pragma once
 
 #include <string>
+#include <iostream>
+#include <utility>
+#include "Defines.h"
+
 
 typedef struct Coordinate {
     size_t line, pos;   //строка, смещение
-    Coordinate(size_t l = 1, size_t p = 1) : line(l), pos(p) {}
 
-    Coordinate &inc_line() {
-        line++;
-        pos = 1;
-        return *this;
-    }
+    Coordinate(size_t = 1, size_t = 1);
 
-    Coordinate &inc_pos() {
-        pos++;
-        return *this;
-    }
+    Coordinate &inc_line();
 
-    Coordinate(const Coordinate &c) : line(c.line), pos(c.pos) {}
+    Coordinate &inc_pos();
 
-    Coordinate &operator=(const Coordinate &c) {
-        if (&c != this) {
-            line = c.line;
-            pos = c.pos;
-        }
-        return *this;
-    }
+    Coordinate(const Coordinate &c);
 
-    bool operator==(const Coordinate &other) const {
-        return (line == other.line) && (pos == other.pos);
-    }
+    Coordinate &operator=(const Coordinate &c);
 
-    bool operator<(const Coordinate &other) const {
-        return (line < other.line) || ((line == other.line) && (pos < other.pos));
-    }
+    bool operator==(const Coordinate &other) const;
 
-    friend std::string to_string(Coordinate c);
+    bool operator<(const Coordinate &other) const;
+
+    friend std::string to_string(const Coordinate& c);
 } Coordinate;
 
 typedef struct ProgramString {
-    std::string program = "";
+    std::string program;
     Coordinate begin;
     Coordinate end;
     size_t length = 0;
@@ -53,152 +41,71 @@ typedef struct Position {
         CHAR, NLINE, WNLINE
     };
 
-    //Position() {}
-    Position(const Position &p) : start(p.start), index(p.index) {}
+    Position(const Position &p);
 
-    Position(Coordinate x = Coordinate(), size_t i = 0) : start(x), index(i) {
+    Position(const Coordinate& = Coordinate(), size_t = 0);
 
-        if (ps.end < start) {
-            std::cout << "Position:: ps.end < start\n";
-            throw std::exception();
-        }
-    }
-
-    Position &operator=(const Position &p) {
-        if (&p != this) {
-            start = p.start;
-            index = p.index;
-        }
-        return *this;
-    }
+    Position &operator=(const Position &p);
 
     int is_at_newline();
 
     Position &operator++();
 
-    Position operator++(int) {
-        Position tmp(*this);
-        operator++();
-        return tmp;
-    }
+    Position operator++(int);
 
-    char operator[](int i) const { return ps.program[i]; }
+    char operator[](int i) const;
 
-    char &operator[](int i) { return ps.program[i]; }
+    char &operator[](int i);
 
-    char cur() { return ps.program[index]; }
+    char cur();
 
-    bool can_peek(int i = 1) { return index + i < ps.length; }
+    bool can_peek(int = 1);
 
-    char peek(int i = 1) { return ps.program[index + i]; }
+    char peek(int = 1);
 
-    char get() {
-        char res = cur();
-        ++(*this);
-        return res;
-    }
+    char get();
 
-    bool operator<(const Position &p) const { return start < p.start; }
+    bool operator<(const Position &p) const;
 
-    bool operator==(const Position &p) const { return start == p.start; }
+    bool operator==(const Position &p) const;
 
-    friend std::string to_string(Position p);
+    friend std::string to_string(const Position& p);
 
-    bool end_of_program() {
-        return start == ps.end;
-    }
+    bool end_of_program() const;
 } Position;
-
-int Position::is_at_newline() {
-    if (cur() == '\n') return cur_type::NLINE;
-    if (index + 1 < ps.length &&
-        cur() == '\r' && peek() == '\n') {
-        return cur_type::WNLINE;
-    }
-    return cur_type::CHAR;
-}
-
-Position &Position::operator++() {
-    if (!end_of_program()) {
-        int at_newline = is_at_newline();
-        if (at_newline == CHAR) {
-            start.inc_pos();
-            ++index;
-        } else {
-            start.inc_line();
-            index += at_newline;
-        }
-    }//else std::cout << "EOF\n";
-    return *this;
-}
 
 
 typedef struct Token {
     Position start; //координаты начала и конца
     Position end;
     std::string raw;    //подстрока из файла
-    std::string _ident = "";    //строковое представление тега - для принта
+    std::string _ident;    //строковое представление тега - для принта
     Tag _tag = ERROR;
 
-    Token(const Token &t) : start(t.start), end(t.end), raw(t.raw), _ident(t._ident), _tag(t._tag) {}
+    Token(const Token &t);
 
-    Token(Position s, Position e, Tag t = ERROR, std::string r = "")
-            : start(s), end(e), _tag(t), raw(r) {
-        _ident = t_info[_tag].name;
-    }
+    Token(const Position&, const Position&, Tag = ERROR, std::string = "");
 
-    Token &operator=(const Token &t) {
-        if (&t != this) {
-            start = t.start;
-            end = t.end;
-            raw = t.raw;
-            _ident = t._ident;
-            _tag = t._tag;
-        }
-        return *this;
-    }
+    Token &operator=(const Token &t);
 
-    //отладочные конструкторы
-    /*Token(Tag x) : _tag(x), _ident(t_info[x].name) {}
-    Token(double x) : Token(NUMBER) {
-    _value = x;
-    _ident = std::to_string(x);
-    }
-    Token(std::string x) : Token(IDENT) { _ident = x; }*/
-    void convert() {
-        Tag alt = t_info[_tag].alternative_tag;
-        if (alt) {
-            _tag = alt;
-            _ident = t_info[_tag].name;
-        }
-    }
+    void convert();
 
-    void unary() { if (t_info[_tag].is_binary) convert(); }
+    void unary();
 
-    void binary() { if (!t_info[_tag].is_binary) convert(); }
+    void binary();
 
-    bool operator<(const Token &t) const { return start < t.start; }
+    bool operator<(const Token &t) const;
 
-    bool operator==(const Token &t) const { return start == t.start; }
+    bool operator==(const Token &t) const;
 
-    friend std::string to_string(Position p);
+    friend std::string to_string(const Position& p);
 } Token;
 
-std::string to_string(Coordinate c) {
-    return "(" + std::to_string(c.line) + ", " + std::to_string(c.pos) + ")";
-}
 
-std::string to_string(ProgramString ps) {
-    return "ProgramString " + to_string(ps.begin) + "-" + to_string(ps.end) +
-           " (" + std::to_string(ps.length) + ")\n" + ps.program;
-}
+std::string to_string(const Coordinate& c);
 
-std::string to_string(Position p) {
-    return "{" + to_string(p.start) + ", " + std::to_string(p.index) + "}";
-}
+std::string to_string(const ProgramString& ps);
 
-std::string to_string(Token l) {
-    std::string res = "<" + to_string(l.start) + "-" + to_string(l.end) +
-                      ": " + ((l.raw.empty()) ? "" : (l.raw + "; ")) + l._ident + ">";
-    return res;
-}
+std::string to_string(const Position& p);
+
+std::string to_string(const Token& l);

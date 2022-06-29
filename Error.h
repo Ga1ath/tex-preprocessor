@@ -1,16 +1,15 @@
 #pragma once
 
+#include "Coordinate.h"
+
+
 class Error : public std::exception {
 public:
-	Error(Coordinate coord, const char* err) {
-		msg = std::to_string(coord.line) + ":" + std::to_string(coord.pos) + ":" + err;
-	}
-	Error(Coordinate coord, std::string err) {
-		msg = std::to_string(coord.line) + ":" + std::to_string(coord.pos) + ":" + err;
-	}
-	const char* what() {
-		return msg.c_str();
-	}
+	Error(const Coordinate& coord, const char* err);
+
+	Error(const Coordinate& coord, const std::string& err);
+
+	const char* what();
 private:
 	std::string msg;
 };

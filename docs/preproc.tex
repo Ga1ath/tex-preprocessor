@@ -1,4 +1,9 @@
 \usepackage{ifthen}
+\usepackage{amsmath}
+\usepackage{color}
+\usepackage{mathtools}
+\usepackage{tikz}
+
 \newcommand{\placeholder}[2][]{\ifthenelse{ \equal{#1}{} }
                                      {\color{blue}#2}
                                      {\color{blue}#2 \cdot #1}}
